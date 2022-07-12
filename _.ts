@@ -60,4 +60,31 @@ export function _reduce<T>(list: T[], iter, memo) {
   });
   return memo;
 }
-console.log(_reduce<number>([1, 2, 3], (a, b) => a + b, 0));
+// console.log(_reduce<number>([1, 2, 3], (a, b) => a + b, 0));
+
+// function _pipe(fns) {
+//   const fns: IArguments = arguments;
+//   console.log("fns", fns);
+//   return function (arg) {
+//     return _reduce(fns, (arg, fn) => fn(arg), arg);
+//   };
+// }
+
+// const f1 = _pipe(
+//   (a) => a + 1,
+//   (a) => a + 2
+// );
+/**
+ * @see https://www.oreilly.com/library/view/hands-on-functional-programming/9781788831437/d3234c19-df94-49e3-ab09-f0da9fbb71f7.xhtml
+ */
+
+export const _pipe =
+  <T>(...fns: Array<(arg: T) => T>) =>
+  (value: T) =>
+    fns.reduce((acc, fn) => fn(acc), value);
+
+export function _pipe(...fns: Array<(arg: T) => T>) {
+  return function (value: T) {
+    return _reduce(fns, (arg, fn) => fn(arg), arg);
+  };
+}
