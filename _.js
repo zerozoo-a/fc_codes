@@ -11,6 +11,7 @@ const _everyc = _curryr(_every);
 const _min_byc = _curryr(_min_by);
 const _max_byc = _curryr(_max_by);
 const _group_byc = _curryr(_group_by);
+const _count_byc = _curryr(_count_by);
 
 function _is_object(obj) {
   return typeof obj === "object" && !!obj;
@@ -166,8 +167,26 @@ function _group_by(data, iter) {
   );
 }
 
+function _count_by(data, iter) {
+  return _reduce(
+    data,
+    (count, val) => {
+      const key = iter(val);
+      count[key] ? count[key]++ : (count[key] = 1);
+      return count;
+    },
+    {}
+  );
+}
+
+// _go(
+//   users,
+//   _group_byc((u) => u.age),
+//   console.log
+// );
+
 _go(
   users,
-  _group_byc((u) => u.age),
-  console.log
+  _count_byc((u) => u.age),
+  log
 );
