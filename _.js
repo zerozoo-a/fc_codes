@@ -65,6 +65,7 @@ function _reduce(list, iter, memo) {
     list = _rest(list, 1);
   }
   _each(list, (val) => {
+    log("val, memo", val, memo);
     memo = iter(memo, val);
   });
   return memo;
@@ -134,5 +135,17 @@ function _every(data, predi) {
   return _find_index(data, _negate(predi || _identity)) == -1;
 }
 
-_go([0, 1, 2, 3], _somec(), log);
-_go([0, 1, 2, 3], _everyc(), log);
+function _min(data) {
+  return _reduce(data, (a, b) => (a < b ? a : b));
+}
+
+function _max(data) {
+  return _reduce(data, (a, b) => (a > b ? a : b));
+}
+
+function _min_by(data, iter) {
+  return _reduce(data, (a, b) => (iter(a) < iter(b) ? a : b));
+}
+function _max_by(data, iter) {
+  return _reduce(data, (a, b) => (iter(a) < iter(b) ? a : b));
+}
