@@ -25,7 +25,7 @@ function _each(list, iter) {
   const keys = _keys(list);
 
   for (let i = 0, len = keys.length; i < len; i++) {
-    iter(list[keys[i]]);
+    iter(list[keys[i]], keys[i]);
   }
   return list;
 }
@@ -40,8 +40,8 @@ function _filter(list, predi) {
 
 function _map(list, mapper) {
   const new_list = [];
-  _each(list, (val) => {
-    new_list.push(mapper(val));
+  _each(list, (val, key) => {
+    new_list.push(mapper(val, key));
   });
 
   return new_list;
@@ -182,8 +182,14 @@ function _count_by(data, iter) {
   );
 }
 
+function _pairs() {
+  return _map((val, key) => [key, val]);
+}
+
 _go(
   users,
-  _count_byc((u) => u.age),
+  _count_byc((u) => u.age - (u.age % 10)),
+  _mapc((count, key) => `<li>${key}대는 ${count}명 입니다.</li>`),
+  (list) => list.join(""),
   log
 );
