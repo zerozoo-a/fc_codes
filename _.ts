@@ -1,15 +1,87 @@
+/**
+ * @see https://www.oreilly.com/library/view/hands-on-functional-programming/9781788831437/d3234c19-df94-49e3-ab09-f0da9fbb71f7.xhtml
+ *
+ */
+const users = [
+  {
+    name: "KIM",
+    age: 55,
+    country: "IT",
+  },
+  {
+    name: "KAG",
+    age: 15,
+    country: "KT",
+  },
+  {
+    name: "WWG",
+    age: 25,
+    country: "KT",
+  },
+  {
+    name: "KMG",
+    age: 12,
+    country: "PT",
+  },
+  {
+    name: "WWG",
+    age: 25,
+    country: "KT",
+  },
+  {
+    name: "KIG",
+    age: 12,
+    country: "PK",
+  },
+];
+
+function _getcurr() {
+  return _curryr(_get);
+}
+const _getc = _getcurr();
+
+function _is_object(obj) {
+  return typeof obj === "object" && !!obj;
+}
+
+function _keys(obj) {
+  return _is_object(obj) ? Object.keys(obj) : [];
+}
+
+export function _each(list: any, iter: any) {
+  const keys = _keys(list);
+
+  for (let i = 0, len = keys.length; i < len; i++) {
+    iter(list[keys[i]]);
+  }
+  return list;
+}
+
+_each(
+  {
+    kakao: "1kakak",
+    2: "2",
+  },
+  (n) => console.log(n)
+);
+
 export function _filter<T>(list: T[], predi: (arg: any) => boolean): T[] {
   const new_list: any[] = [];
-  for (let i: number = 0; i < list.length; i++) {
-    if (predi(list[i])) {
-      new_list.push(list[i]);
-    }
-  }
+  _each(list, (val) => {
+    predi(val) && new_list.push(val);
+  });
+  return new_list;
+}
+function _map(list: any, mapper: any) {
+  const new_list: any = [];
+  _each(list, (val: any) => {
+    new_list.push(mapper(val));
+  });
 
   return new_list;
 }
 
-export function _get(obj: { [key: string]: any }, key: string): any {
+export function _get(obj: any, key: string) {
   return obj === null ? undefined : obj[key];
 }
 
@@ -25,27 +97,6 @@ export function _curryr(fn: (a: any, b: any) => any): (a: any, b?: any) => any {
   };
 }
 
-export function _map<T>(list: T[], mapper: (arg: T) => any): any[] {
-  const new_list: any = [];
-  for (let i: number = 0; i < list.length; i++) {
-    new_list.push(mapper(list[i]));
-  }
-  return new_list;
-}
-
-function _map2<T>(list: T[], mapper: (arg: T) => any): any[] {
-  const new_list: any = [];
-  _each(list, function (val: any): void {
-    new_list.push(mapper(val));
-  });
-  return new_list;
-}
-
-export function _each(list: any[], iter: any) {
-  for (let i = 0; i < list.length; i++) {
-    iter(list[i]);
-  }
-}
 export function _rest<T>(list: ArrayLike<T>, num: number) {
   return Array.prototype.slice.call(list, num || 1);
 }
@@ -60,31 +111,51 @@ export function _reduce<T>(list: T[], iter, memo) {
   });
   return memo;
 }
-// console.log(_reduce<number>([1, 2, 3], (a, b) => a + b, 0));
 
-// function _pipe(fns) {
-//   const fns: IArguments = arguments;
-//   console.log("fns", fns);
-//   return function (arg) {
-//     return _reduce(fns, (arg, fn) => fn(arg), arg);
-//   };
-// }
-
-// const f1 = _pipe(
-//   (a) => a + 1,
-//   (a) => a + 2
-// );
-/**
- * @see https://www.oreilly.com/library/view/hands-on-functional-programming/9781788831437/d3234c19-df94-49e3-ab09-f0da9fbb71f7.xhtml
- */
-
-export const _pipe =
-  <T>(...fns: Array<(arg: T) => T>) =>
-  (value: T) =>
-    fns.reduce((acc, fn) => fn(acc), value);
-
-export function _pipe(...fns: Array<(arg: T) => T>) {
-  return function (value: T) {
-    return _reduce(fns, (arg, fn) => fn(arg), arg);
+function _pipe(...fns) {
+  // 함수 배열을 받아 reduce에 넣은 함수를 반환하는 함수
+  return function (arg) {
+    //arg는 pipe함수를 호출한 함수가 넣어줄 인자
+    return _reduce(fns, (arg, fn) => fn(arg), arg); //함수 배열을 넣어 줌 위에서 받은 인자를 iter에 넣음
   };
 }
+
+const f1 = _pipe(
+  (a) => a + 1,
+  (a) => a + 2,
+  (a) => a + 3
+);
+
+// console.log("f1", f1(5));
+
+function _go(arg, ...args) {
+  const fns = _rest(args, 1);
+  return _pipe.apply(null, fns)(arg);
+}
+
+_go(
+  1,
+  (a) => a + 1,
+  (a) => a + 2,
+  (a) => a + 3,
+  console.log
+);
+
+// _go(
+//   users,
+//   (users) => _filter(users, (user) => user.age > 1),
+//   (users) => _map(users, (user) => _get(user, "name")),
+//   console.log
+// );
+
+const _mapr = _curryr(_map);
+const _filterr = _curryr(_filter);
+
+// _go(
+//   users,
+//   _filterr((user) => user.age > 5),
+//   _mapr((user) => _get(user, "name")),
+//   console.log
+// );
+
+// console.log(_each([1, 2, 3], console.log));
