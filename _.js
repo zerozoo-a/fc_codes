@@ -167,23 +167,20 @@ function _group_by(data, iter) {
   );
 }
 
+function _pp(count, key) {
+  count[key] ? count[key]++ : (count[key] = 1);
+  return count;
+}
+
 function _count_by(data, iter) {
   return _reduce(
     data,
     (count, val) => {
-      const key = iter(val);
-      count[key] ? count[key]++ : (count[key] = 1);
-      return count;
+      return _pp(count, iter(val));
     },
     {}
   );
 }
-
-// _go(
-//   users,
-//   _group_byc((u) => u.age),
-//   console.log
-// );
 
 _go(
   users,
