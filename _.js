@@ -135,12 +135,27 @@ export function _negate(fn) {
 
 const _compact = _filterr(_identity);
 
-log("values", _values(users[0]));
-log("keys", _keys(users[0]));
-log("_pluck", _pluck(users, "age"));
-log(
-  "_reject",
-  _reject(users, (v) => v.age > 20)
-);
+export function _find(list, predi) {
+  const keys = _keys(list);
+  for (let i = 0, len = keys.length; i < len; i++) {
+    const val = list[keys[i]];
+    if (predi(val)) return val;
+  }
+}
 
-log("compact>>>", _compact([1, 2, 0, false, {}]));
+export function _findIndex(list, predi) {
+  const keys = _keys(list);
+  for (let i = 0; (len = keys.length), i < len; i++) {
+    if (predi(list[keys[i]])) return i;
+  }
+}
+
+// log("values", _values(users));
+// log("keys", _keys(users)[0]);
+// log("_pluck", _pluck(users, "age"));
+// log(
+//   "_reject",
+//   _reject(users, (v) => v.age > 20)
+// );
+
+// log("compact>>>", _compact([1, 2, 0, false, {}]));
