@@ -1,39 +1,13 @@
+const { users } = require("./mock_data");
+
 const log = console.log;
-const users = [
-  {
-    name: "KIM",
-    age: 55,
-    country: "IT",
-  },
-  {
-    name: "KAG",
-    age: 15,
-    country: "KT",
-  },
-  {
-    name: "WWG",
-    age: 25,
-    country: "KT",
-  },
-  {
-    name: "KMG",
-    age: 12,
-    country: "PT",
-  },
-  {
-    name: "WWG",
-    age: 25,
-    country: "KT",
-  },
-  {
-    name: "KIG",
-    age: 12,
-    country: "PK",
-  },
-];
-const _mapr = _curryr(_map);
-const _filterr = _curryr(_filter);
-const _getr = _curryr(_get);
+const _mapc = _curryr(_map);
+const _filterc = _curryr(_filter);
+const _getc = _curryr(_get);
+const _findc = _curryr(_find);
+const _compact = _filterc(_identity);
+const _somec = _curryr(_some);
+const _everyc = _curryr(_every);
 
 function _is_object(obj) {
   return typeof obj === "object" && !!obj;
@@ -43,7 +17,7 @@ function _keys(obj) {
   return _is_object(obj) ? Object.keys(obj) : [];
 }
 
-export function _each(list, iter) {
+function _each(list, iter) {
   const keys = _keys(list);
 
   for (let i = 0, len = keys.length; i < len; i++) {
@@ -52,7 +26,7 @@ export function _each(list, iter) {
   return list;
 }
 
-export function _filter(list, predi) {
+function _filter(list, predi) {
   const new_list = [];
   _each(list, (val) => {
     predi(val) && new_list.push(val);
@@ -69,23 +43,23 @@ function _map(list, mapper) {
   return new_list;
 }
 
-export function _curry(fn) {
+function _curry(fn) {
   return function (a, b) {
     return arguments.length === 2 ? fn(a, b) : (b) => fn(a, b);
   };
 }
 
-export function _curryr(fn) {
+function _curryr(fn) {
   return function (a, b) {
     return arguments.length === 2 ? fn(a, b) : (b) => fn(b, a);
   };
 }
 
-export function _rest(list, num) {
+function _rest(list, num) {
   return Array.prototype.slice.call(list, num || 1);
 }
 
-export function _reduce(list, iter, memo) {
+function _reduce(list, iter, memo) {
   if (arguments.length === 2) {
     memo = list[0];
     list = _rest(list, 1);
@@ -104,58 +78,61 @@ function _pipe(...fns) {
   };
 }
 
-function _go(arg, ...args) {
-  const fns = _rest(args, 1);
+function _go(arg) {
+  const fns = _rest(arguments);
   return _pipe.apply(null, fns)(arg);
 }
 
-export function _get(obj, key) {
+function _get(obj, key) {
   return obj === null ? undefined : obj[key];
 }
 
-export function _values(data) {
+function _values(data) {
   return _map(data, _identity);
 }
 
-export function _identity(val) {
+function _identity(val) {
   return val;
 }
 
-export function _pluck(data, key) {
+function _pluck(data, key) {
   return _map(data, _getr(key));
 }
 
-export function _reject(data, predi) {
+function _reject(data, predi) {
   return _filter(data, _negate(predi));
 }
 
-export function _negate(fn) {
+function _negate(fn) {
   return (val) => !fn(val);
 }
 
-const _compact = _filterr(_identity);
-
-export function _find(list, predi) {
+function _find(list, predi) {
   const keys = _keys(list);
+  log("keys", keys[0]);
   for (let i = 0, len = keys.length; i < len; i++) {
     const val = list[keys[i]];
+    log("val", val);
+    log("predi", predi(val));
     if (predi(val)) return val;
   }
 }
 
-export function _findIndex(list, predi) {
+function _find_index(list, predi) {
   const keys = _keys(list);
   for (let i = 0; (len = keys.length), i < len; i++) {
     if (predi(list[keys[i]])) return i;
   }
+  return -1;
 }
 
-// log("values", _values(users));
-// log("keys", _keys(users)[0]);
-// log("_pluck", _pluck(users, "age"));
-// log(
-//   "_reject",
-//   _reject(users, (v) => v.age > 20)
-// );
+function _some(data, predi) {
+  return _find_index(data, predi || _identity) !== -1;
+}
 
-// log("compact>>>", _compact([1, 2, 0, false, {}]));
+function _every(data, predi) {
+  return _find_index(data, _negate(predi || _identity)) == -1;
+}
+
+_go([0, 1, 2, 3], _somec(), log);
+_go([0, 1, 2, 3], _everyc(), log);
