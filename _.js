@@ -8,6 +8,9 @@ const _findc = _curryr(_find);
 const _compact = _filterc(_identity);
 const _somec = _curryr(_some);
 const _everyc = _curryr(_every);
+const _min_byc = _curryr(_min_by);
+const _max_byc = _curryr(_max_by);
+const _group_byc = _curryr(_group_by);
 
 function _is_object(obj) {
   return typeof obj === "object" && !!obj;
@@ -65,7 +68,6 @@ function _reduce(list, iter, memo) {
     list = _rest(list, 1);
   }
   _each(list, (val) => {
-    log("val, memo", val, memo);
     memo = iter(memo, val);
   });
   return memo;
@@ -110,11 +112,8 @@ function _negate(fn) {
 
 function _find(list, predi) {
   const keys = _keys(list);
-  log("keys", keys[0]);
   for (let i = 0, len = keys.length; i < len; i++) {
     const val = list[keys[i]];
-    log("val", val);
-    log("predi", predi(val));
     if (predi(val)) return val;
   }
 }
@@ -149,3 +148,26 @@ function _min_by(data, iter) {
 function _max_by(data, iter) {
   return _reduce(data, (a, b) => (iter(a) < iter(b) ? a : b));
 }
+
+function _push(obj, key, val) {
+  (obj[key] = obj[key] || []).push(val);
+  return obj;
+}
+
+function _group_by(data, iter) {
+  return _reduce(
+    data,
+    (grouped, val) =>
+      /**
+       * grouped[key]는 이미 있는 경우 {key:[..., val]} : {key:[].push(val)}의 형태가 된다.
+       */
+      _push(grouped, iter(val), val),
+    {}
+  );
+}
+
+_go(
+  users,
+  _group_byc((u) => u.age),
+  console.log
+);
