@@ -125,6 +125,22 @@ export function _pluck(data, key) {
   return _map(data, _getr(key));
 }
 
+export function _reject(data, predi) {
+  return _filter(data, _negate(predi));
+}
+
+export function _negate(fn) {
+  return (val) => !fn(val);
+}
+
+const _compact = _filterr(_identity);
+
 log("values", _values(users[0]));
 log("keys", _keys(users[0]));
 log("_pluck", _pluck(users, "age"));
+log(
+  "_reject",
+  _reject(users, (v) => v.age > 20)
+);
+
+log("compact>>>", _compact([1, 2, 0, false, {}]));
