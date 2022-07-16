@@ -193,3 +193,19 @@ _go(
   (list) => list.join(""),
   log
 );
+
+function square(a) {
+  return new Promise(function (res) {
+    setTimeout(function () {
+      res(a * a);
+    }, 500);
+  });
+}
+
+square(1)
+  .then(square)
+  .then(square)
+  .then(square)
+  .then(square)
+  .then(square)
+  .then(log);
