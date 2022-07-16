@@ -181,12 +181,10 @@ function tester(name, time, f) {
   console.timeEnd(name);
 }
 
-// log("range 10");
-// go(range(10), reduce(add), log);
-// log("---------------------------");
-
-// log("L.range 10");
-// go(L.range(10), reduce(add), log);
-
-tester("range", 10, () => reduce(add, range(10000)));
-tester("range", 10, () => reduce(add, L.range(10000)));
+const take = (l, iter) => {
+  let res = [];
+  for (const a of iter) {
+    res.push(a);
+    if (res.length === l) return res;
+  }
+};
