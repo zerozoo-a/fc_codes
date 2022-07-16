@@ -188,3 +188,15 @@ const take = (l, iter) => {
     if (res.length === l) return res;
   }
 };
+
+exports.module = {
+  add,
+  curry,
+  filter,
+  go,
+  map,
+  pipe,
+  range,
+  take,
+  reduce,
+};
