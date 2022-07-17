@@ -1,3 +1,4 @@
+const C = {};
 const L = {};
 const nop = Symbol("nop");
 const log = console.log;
@@ -30,19 +31,30 @@ function curry(f) {
 function promiseHelper(a, f) {
   return a instanceof Promise ? a.then(f) : f(a);
 }
+
+function reduceResolver(acc, val, f) {
+  return val instanceof Promise
+    ? val.then(
+        (val) => f(acc, val),
+        (e) => (e === nop ? acc : Promise.reject(e))
+      )
+    : f(acc, val);
+}
+
+// const head = (iter) => promiseHelper(take(1, iter), ([h]) => h);
+const head = (iter) => promiseHelper(take(1, iter), ([h]) => h);
+
 const reduce = curry((f, acc, iter) => {
   if (!iter) {
-    iter = acc[Symbol.iterator]();
-    acc = iter.next().value;
-  } else {
-    iter = iter[Symbol.iterator]();
+    return reduce(f, head((iter = acc[Symbol.iterator]())), iter);
   }
+
+  iter = iter[Symbol.iterator]();
 
   return promiseHelper(acc, function recur(acc) {
     let cur;
     while (!(cur = iter.next()).done) {
-      const a = cur.value;
-      acc = f(acc, a);
+      acc = reduceResolver(acc, cur.value, f);
       if (acc instanceof Promise) return acc.then(recur);
     }
     return acc;
@@ -256,5 +268,48 @@ go(
   L.map((a) => Promise.resolve(a * a)),
   L.map((a) => Promise.resolve(a * a)),
   take(2),
+  reduce((a, b) => a + b),
   log
+);
+
+const delay1000 = (a) =>
+  new Promise((res) => {
+    setTimeout(() => res(a), 1000);
+  });
+
+/**
+ * iterator를 모두 풀어서 넘겨주게 된다면
+ * iterator가 외부 api를 사용하는 비동기 연산자일 경우 single thread인
+ * js와 상관 없이 n개의 비동기 연산이 모두 동시에 실행된다.
+ * 만약 iter가 2개의 비동기 iterable 함수일 경우 [비동기 시작, 비동기 시작]을 각각 병렬적으로 실행한다.
+ */
+function noop() {}
+const catchNoop = (arr) => (
+  arr.forEach((a) => (a instanceof Promise ? a.catch(noop) : a)), arr
+);
+C.reduce = curry((f, acc, iter) => {
+  return iter
+    ? reduce(f, acc, catchNoop([...iter]))
+    : reduce(f, catchNoop([...acc]));
+});
+C.take = curry((l, iter) => take(l, catchNoop([...iter])));
+C.takeAll = C.take(Infinity);
+C.map = curry(pipe(L.map, C.takeAll));
+C.filter = curry(pipe(L.filter, C.takeAll));
+
+const delay500 = (a, name) =>
+  new Promise((res) => {
+    log(`${name}: ${a}`);
+    setTimeout(() => res(a), 500);
+  });
+
+console.time("hi");
+go(
+  [1, 2, 3, 4, 5, 6, 7],
+  L.map((a) => delay500(a * a, "map1")),
+  L.filter((a) => delay500(a % 2, "filter1")),
+  L.map((a) => delay500(a + 2, "map2")),
+  C.take(2),
+  log,
+  (_) => console.timeEnd("hi")
 );
