@@ -49,9 +49,11 @@ const range = (l) => {
   return res;
 };
 const take = curry((l, iter) => {
+  log("?????????????", iter);
   let res = [];
   for (const a of iter) {
     res.push(a);
+    log("a", a);
     if (res.length === l) return res;
   }
 });
@@ -89,6 +91,33 @@ L.filter = curry(function* (f, iter) {
 L.entries = function* (obj) {
   for (const k in obj) yield [k, obj[k]];
 };
+const isIterable = (a) => a && a[Symbol.iterator];
+
+/**
+ *  `yield * a === for (const val of iterable) yield val`
+ */
+L.flatten = function* (iter) {
+  for (const a of iter) {
+    if (isIterable(a)) {
+      for (const b of a) yield b;
+    } else {
+      yield a;
+    }
+  }
+};
+L.flatten_short = function* (iter) {
+  for (const a of iter) {
+    if (isIterable(a)) yield* a;
+    else yield a;
+  }
+};
+
+L.deepFlat = function* f(iter) {
+  for (const a of iter) {
+    if (isIterable(a)) yield* f(a);
+    else yield a;
+  }
+};
 
 const it_filter = L.filter((a) => a % 2, [1, 2, 3, 4, 5, 6]);
 // log([...it_filter]);
@@ -119,3 +148,25 @@ const queryStr = pipe(
   join("&")
 );
 log(queryStr({ limit: 10, offset: 1, type: "notice" }));
+
+const users = [
+  { a: 1 },
+  { a: 2 },
+  { a: 3 },
+  { a: 4 },
+  { a: 5 },
+  { a: 6 },
+  { a: 1111111 },
+];
+
+const find = curry((f, iter) => go(iter, L.filter(f), take(1), ([a]) => a));
+
+log(find((u) => u.a > 6)(users));
+go(
+  users,
+  find((n) => n.a > 1),
+  log
+);
+
+const map_L_ver = curry(pipe(L.map, take(Infinity)));
+const filter_L_ver = curry(pipe(L.filter, take(Infinity)));
