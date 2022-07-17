@@ -1,0 +1,7 @@
+{
+  "name": "fc",
+  "packageManager": "yarn@3.2.1",
+  "dependencies": {
+    "@fxts/core": "^0.9.0"
+  }
+}
