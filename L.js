@@ -1,5 +1,7 @@
 const L = {};
+const nop = Symbol("nop");
 const log = console.log;
+const go1 = (a, f) => (a instanceof Promise ? a.then(f) : f(a));
 
 function curry(f) {
   return function (a, ..._) {
@@ -7,33 +9,44 @@ function curry(f) {
   };
 }
 
-const map = curry((f, iter) => {
-  let res = [];
-  for (const a of iter) {
-    res.push(f(a));
-  }
-  return res;
-});
+// const map = curry((f, iter) => {
+//   let res = [];
+//   for (const a of iter) {
+//     res.push(f(a));
+//   }
+//   return res;
+// });
 
-const filter = curry((f, iter) => {
-  let res = [];
-  for (const a of iter) {
-    if (f(a)) {
-      res.push(a);
-    }
-  }
-  return res;
-});
+// const filter = curry((f, iter) => {
+//   let res = [];
+//   for (const a of iter) {
+//     if (f(a)) {
+//       res.push(a);
+//     }
+//   }
+//   return res;
+// });
 
+function promiseHelper(a, f) {
+  return a instanceof Promise ? a.then(f) : f(a);
+}
 const reduce = curry((f, acc, iter) => {
   if (!iter) {
     iter = acc[Symbol.iterator]();
     acc = iter.next().value;
+  } else {
+    iter = iter[Symbol.iterator]();
   }
-  for (const a of iter) {
-    acc = f(acc, a);
-  }
-  return acc;
+
+  return promiseHelper(acc, function recur(acc) {
+    let cur;
+    while (!(cur = iter.next()).done) {
+      const a = cur.value;
+      acc = f(acc, a);
+      if (acc instanceof Promise) return acc.then(recur);
+    }
+    return acc;
+  });
 });
 
 const go = (...args) => {
@@ -49,14 +62,46 @@ const range = (l) => {
   return res;
 };
 const take = curry((l, iter) => {
-  log("?????????????", iter);
   let res = [];
-  for (const a of iter) {
-    res.push(a);
-    log("a", a);
-    if (res.length === l) return res;
-  }
+  iter = iter[Symbol.iterator]();
+  return (function recur() {
+    let cur;
+    while (!(cur = iter.next()).done) {
+      const a = cur.value;
+      if (a instanceof Promise) {
+        return a
+          .then((a) => {
+            res.push(a);
+            if (res.length === l) return res;
+
+            return recur();
+          })
+          .catch((e) => (e === nop ? recur() : Promise.reject(e)));
+      }
+
+      res.push(a);
+
+      if (res.length === l) return res;
+    }
+
+    return res;
+  })();
+  //   let cur;
+  //   while (!(cur = iter.next()).done) {
+  //     const a = cur.value;
+
+  //     if(a instanceof Promise) return a.then(a=>{
+  //         res.push(a);
+  //         if(res.length === l) return res;
+  //     })
+
+  //     res.push(a);
+  //     if (res.length === l) return res;
+  //   }
+
+  //   return res;
 });
+const takeAll = take(Infinity);
 
 // const pipe = (...fs) => (a) => go(a,...fs);
 const pipe =
@@ -65,7 +110,7 @@ const pipe =
     go(f(...as), ...fs);
 
 L.map = curry(function* (f, iter) {
-  for (const a of iter) yield f(a);
+  for (const a of iter) yield promiseHelper(a, f);
 });
 
 L.range = function* (l) {
@@ -77,15 +122,22 @@ L.range = function* (l) {
 // log([...it_map]); // L.map을 배열로 꺼내는 방법 // 평가가 진행되지 않았을 경우
 
 L.filter = curry(function* (f, iter) {
-  //   for (const a of iter) if (f(a)) yield a;
-  iter = iter[Symbol.iterator]();
-  let cur;
-  while (!(cur = iter.next()).done) {
-    const a = cur.value;
-    if (f(a)) {
-      yield a;
-    }
+  // for (const a of iter) if (f(a)) yield a;
+  for (const a of iter) {
+    const b = promiseHelper(a, f);
+    if (b instanceof Promise)
+      yield b.then((b) => (b ? a : Promise.reject(nop)));
+    else if (b) yield a;
   }
+
+  //   iter = iter[Symbol.iterator]();
+  //   let cur;
+  //   while (!(cur = iter.next()).done) {
+  //     const a = cur.value;
+  //     if (f(a)) {
+  //       yield a;
+  //     }
+  //   }
 });
 
 L.entries = function* (obj) {
@@ -114,28 +166,15 @@ L.flatten_short = function* (iter) {
 
 L.deepFlat = function* f(iter) {
   for (const a of iter) {
-    if (isIterable(a)) yield* f(a);
+    if (isIterable(a)) yield* f(a); // 재귀함수를 호출한다
     else yield a;
   }
 };
 
+L.flatMap = curry(pipe(L.map, L.flatten));
+console.clear();
+
 const it_filter = L.filter((a) => a % 2, [1, 2, 3, 4, 5, 6]);
-// log([...it_filter]);
-
-go(
-  range(10),
-  map((a) => a + 10),
-  take(5),
-  log
-);
-
-go(
-  L.range(10),
-  L.map((a) => a + 10),
-  L.filter((n) => n % 2),
-  take(2),
-  log
-);
 
 const join = curry((sep = ",", iter) =>
   reduce((a, b) => `${a}${sep}${b}`, iter)
@@ -147,7 +186,6 @@ const queryStr = pipe(
   L.map(([k, v]) => `${k}=${v}`),
   join("&")
 );
-log(queryStr({ limit: 10, offset: 1, type: "notice" }));
 
 const users = [
   { a: 1 },
@@ -161,12 +199,62 @@ const users = [
 
 const find = curry((f, iter) => go(iter, L.filter(f), take(1), ([a]) => a));
 
-log(find((u) => u.a > 6)(users));
+const map = curry(pipe(L.map, take(Infinity)));
+const filter = curry(pipe(L.filter, take(Infinity)));
+
+const deep = [
+  [1, 2],
+  [3, 5, 4],
+  [6, 7, 8, 9],
+];
+// go(
+//   deep,
+//   L.flatten,
+//   L.filter((a) => a % 2),
+//   take(1),
+//   log
+// );
+
+/* Promise*/
+
+function add10(a, callback) {
+  setTimeout(() => callback(a + 10), 100);
+}
+// add10(5, (r) => log(r));
+
+function add20(a) {
+  return new Promise((r) => setTimeout(() => r(a + 20), 100));
+}
+// add20(5).then(log);
+const delay100 = (a) =>
+  new Promise((resolve) => setTimeout(() => resolve(a), 100));
+
+const add5 = (a) => a + 5;
+// log(go1(delay100(10), add5));
+
+// Kleisli composition
+
+const usersForError = [
+  { id: 1, name: "aa" },
+  { id: 2, name: "bb" },
+  { id: 3, name: "cc" },
+];
+
+// go(
+//   Promise.resolve(1),
+//   (a) => a + 1,
+//   (a) => Promise.reject("hihi"),
+//   (a) => log("hi?", a),
+//   log
+// ).catch((a) => log(a));
+
 go(
-  users,
-  find((n) => n.a > 1),
+  [1, 2, 3, 4, 5, 6],
+  L.map((a) => Promise.resolve(a * a)),
+  L.filter((a) => a % 2),
+  L.map((a) => Promise.resolve(a * a)),
+  L.map((a) => Promise.resolve(a * a)),
+  L.map((a) => Promise.resolve(a * a)),
+  take(2),
   log
 );
-
-const map_L_ver = curry(pipe(L.map, take(Infinity)));
-const filter_L_ver = curry(pipe(L.filter, take(Infinity)));
