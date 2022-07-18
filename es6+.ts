@@ -1,4 +1,13 @@
-import { range, map, take, pipe, filter, toArray, reduce } from "@fxts/core";
+import {
+  range,
+  map,
+  take,
+  pipe,
+  filter,
+  toArray,
+  reduce,
+  reject,
+} from "@fxts/core";
 const log = console.log;
 
 pipe(
@@ -27,5 +36,57 @@ pipe(
   // log
 );
 
-// log("stars", stars);
+// pipe(
+//   range(2, 10),
+//   map((a) =>
+//     pipe(
+//       range(1, 10),
+//       toArray,
+//       (_) => {
+//         console.log("___", _);
+//         return _;
+//       },
+//       map((b) => `${a}*${b}`),
+//       log
+//     )
+//   ),
+//   log
+// );
+
+pipe(
+  range(2, 10),
+  toArray,
+  map((a) =>
+    pipe(
+      range(1, 10),
+      toArray,
+      map((_) => {
+        return `${_}*${a}`;
+      }),
+      toArray
+    )
+  ),
+  toArray,
+  log
+);
+
+const querys = {
+  a: 1,
+  b: undefined,
+  c: "CC",
+  d: "D_IS_D",
+};
+
+const query3 = (obj = querys) =>
+  pipe(
+    querys,
+    (a) => Object.entries(a),
+    reject(([_, v]) => v === undefined),
+    map(([k, v]) => `${k}=${v}`),
+    reduce((a, b) => `${a}&${b}`),
+    log
+  );
+
+query3();
+
 export {};
