@@ -89,4 +89,17 @@ const query3 = (obj = querys) =>
 
 query3();
 
+const split = curry((sep, str) => str.split(sep));
+
+function* values(obj) {
+  for (const k in obj) {
+    yield obj[k];
+  }
+}
+function* keys(obj) {
+  for (const k in obj) {
+    yield k;
+  }
+}
+
 export {};
