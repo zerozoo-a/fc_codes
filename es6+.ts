@@ -137,4 +137,27 @@ pipe(
   object,
   log
 );
+
+class Collection {
+  _models: any[];
+  constructor(models = []) {
+    this._models = models;
+  }
+
+  at(idx) {
+    return this._models[idx];
+  }
+
+  add(model): this {
+    this._models.push(model);
+    return this;
+  }
+
+  *[Symbol.iterator]() {
+    for (const model of this._models) {
+      yield model;
+    }
+  }
+}
+
 export {};
